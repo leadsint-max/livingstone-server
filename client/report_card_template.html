@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Academic Report Card - Livingstone International School</title>
+    <style>
+        body { font-family: 'Times New Roman', serif; padding: 40px; background: #999; }
+        .report-card { background: white; width: 800px; margin: auto; padding: 50px; box-shadow: 0 0 20px rgba(0,0,0,0.5); border: 10px double #2c3e50; }
+        .header { text-align: center; border-bottom: 2px solid #2c3e50; padding-bottom: 20px; margin-bottom: 20px; }
+        .school-name { font-size: 2.2rem; font-weight: bold; color: #2c3e50; margin: 0; text-transform: uppercase; }
+        .student-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 30px; font-size: 1.1rem; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #333; padding: 12px; text-align: center; }
+        th { background: #f2f2f2; }
+        .subject-name { text-align: left; font-weight: bold; }
+        
+        .remarks-section { margin-top: 40px; }
+        .signature-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 50px; margin-top: 60px; text-align: center; }
+        .sig-line { border-top: 1px solid #333; padding-top: 10px; width: 200px; margin: auto; }
+        
+        @media print {
+            body { background: white; padding: 0; }
+            .report-card { box-shadow: none; border: 5px double #000; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="report-card">
+        <div class="header">
+            <h1 class="school-name">Livingstone International School</h1>
+            <p>123 Excellence Way, Greater Accra, Ghana</p>
+            <h2 style="margin-top: 10px; text-decoration: underline;">TERM PERFORMANCE REPORT</h2>
+        </div>
+
+        <div class="student-meta">
+            <div style="grid-row: span 4;">
+                <img src="https://via.placeholder.com/120" style="width: 120px; height: 140px; border: 2px solid #2c3e50; object-fit: cover; display: block;">
+            </div>
+            <div><strong>Student Name:</strong> Samuel Okon</div>
+            <div><strong>Academic Year:</strong> 2026/2027</div>
+            <div><strong>Student ID:</strong> LIS-2026-0042</div>
+            <div><strong>Class:</strong> Grade 10 - Science</div>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Subject</th>
+                    <th>CA (40%)</th>
+                    <th>Exam (60%)</th>
+                    <th>Total (100)</th>
+                    <th>Grade</th>
+                    <th>Remarks</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td class="subject-name">Mathematics</td><td>36</td><td>52</td><td>88</td><td>A</td><td>Excellent</td></tr>
+                <tr><td class="subject-name">Physics</td><td>30</td><td>45</td><td>75</td><td>B+</td><td>Very Good</td></tr>
+                <tr><td class="subject-name">Chemistry</td><td>38</td><td>54</td><td>92</td><td>A+</td><td>Exceptional</td></tr>
+                <tr><td class="subject-name">English Language</td><td>28</td><td>42</td><td>70</td><td>B</td><td>Good</td></tr>
+                <tr><td class="subject-name">Biology</td><td>34</td><td>48</td><td>82</td><td>A</td><td>Excellent</td></tr>
+            </tbody>
+        </table>
+
+        <div class="remarks-section">
+            <p><strong>Class Teacher's Remarks:</strong> Samuel is a diligent student who shows great interest in science subjects. He should continue to work hard in English.</p>
+            <p><strong>Principal's Remarks:</strong> Highly commendable performance. Keep it up!</p>
+        </div>
+
+        <div class="signature-grid">
+            <div>
+                <div class="sig-line"></div>
+                <p>Class Teacher</p>
+            </div>
+            <div>
+                <div class="sig-line"></div>
+                <p>School Principal</p>
+            </div>
+        </div>
+        
+        <div style="text-align: center; margin-top: 40px; font-size: 0.8rem; color: #666;">
+            *This is a computer-generated report and does not require a physical stamp unless specified.*
+        </div>
+    </div>
+
+    <div style="text-align: center; margin-top: 20px;">
+        <button onclick="window.print()" style="padding: 10px 20px; cursor: pointer;">Print Report Card</button>
+    </div>
+
+</body>
+</html>

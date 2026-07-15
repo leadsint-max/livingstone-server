@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Portal - Livingstone International School</title>
+    <style>
+        :root { --primary: #2c3e50; --accent: #3498db; --bg: #f0f2f5; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; display: flex; }
+        
+        .sidebar { width: 240px; height: 100vh; background: var(--primary); color: white; position: fixed; padding: 20px; }
+        .main { margin-left: 280px; padding: 30px; width: 100%; }
+
+        .profile-header { background: white; padding: 20px; border-radius: 12px; display: flex; align-items: center; gap: 20px; margin-bottom: 25px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .avatar { width: 80px; height: 80px; background: #ddd; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2rem; }
+
+        .grid { display: grid; grid-template-columns: 2fr 1fr; gap: 25px; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 25px; }
+        
+        .fee-status { background: #fff5f5; border-left: 5px solid #e74c3c; padding: 15px; border-radius: 4px; color: #c0392b; margin-bottom: 15px; }
+        .fee-status.paid { background: #f0fff4; border-left-color: #38a169; color: #2f855a; }
+
+        table { width: 100%; border-collapse: collapse; }
+        th, td { text-align: left; padding: 12px; border-bottom: 1px solid #eee; }
+        
+        .badge { padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; }
+        .badge-present { background: #e6fffa; color: #2c7a7b; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <h2>Livingstone</h2>
+        <p style="opacity: 0.7;">Student Portal</p>
+        <hr style="opacity: 0.2; margin: 20px 0;">
+        <nav>
+            <p>🏠 Dashboard</p>
+            <p>📚 My Courses</p>
+            <p>📝 Results</p>
+            <p>💳 Payments</p>
+            <p>📅 Timetable</p>
+        </nav>
+    </div>
+
+    <div class="main">
+        <div class="profile-header">
+            <div class="avatar">SO</div>
+            <div>
+                <h2 style="margin:0;">Samuel Okon</h2>
+                <p style="color: #666; margin: 5px 0 0;">ID: LIS-2026-0042 | Grade 10 - Science</p>
+            </div>
+        </div>
+
+        <div class="grid">
+            <div>
+                <div class="card">
+                    <h3>Academic Performance (Current Term)</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Subject</th>
+                                <th>Mid-Term</th>
+                                <th>Final Exam</th>
+                                <th>Grade</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>Mathematics</td><td>85/100</td><td>-</td><td>A</td></tr>
+                            <tr><td>Physics</td><td>78/100</td><td>-</td><td>B+</td></tr>
+                            <tr><td>Chemistry</td><td>92/100</td><td>-</td><td>A+</td></tr>
+                            <tr><td>English</td><td>74/100</td><td>-</td><td>B</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="card">
+                    <h3>Upcoming Assignments</h3>
+                    <p style="color: #666;">📝 Physics Lab Report - Due: July 20, 2026</p>
+                    <p style="color: #666;">📖 History Essay - Due: July 22, 2026</p>
+                </div>
+            </div>
+
+            <div>
+                <div class="card">
+                    <h3>Financial Status</h3>
+                    <div class="fee-status">
+                        <strong>Balance Due: $1,200.00</strong>
+                        <p style="font-size: 0.85rem; margin-top: 5px;">Next installment due by July 30th.</p>
+                    </div>
+                    <button style="width: 100%; padding: 10px; background: var(--accent); color: white; border: none; border-radius: 6px; cursor: pointer;">Pay Online Now</button>
+                </div>
+
+                <div class="card">
+                    <h3>Attendance Summary</h3>
+                    <div style="font-size: 2rem; font-weight: bold; color: #2c7a7b;">96%</div>
+                    <p style="color: #666;">(Present: 48, Absent: 2)</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enter Grades - Livingstone International School</title>
+    <style>
+        :root { --primary: #2c3e50; --accent: #8e44ad; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f9fafb; margin: 20px; }
+        .container { max-width: 900px; margin: auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .header { border-bottom: 2px solid #eee; margin-bottom: 20px; padding-bottom: 10px; }
+        .controls { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 30px; }
+        select { padding: 10px; border: 1px solid #ddd; border-radius: 4px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { text-align: left; padding: 12px; border-bottom: 1px solid #eee; }
+        input[type="number"] { width: 60px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; text-align: center; }
+        .btn-save { background: var(--accent); color: white; border: none; padding: 12px 25px; border-radius: 6px; cursor: pointer; float: right; margin-top: 20px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <h2>📝 Enter Academic Results</h2>
+            <p style="color: #666;"> Livingstone International School - Grading Portal</p>
+        </div>
+
+        <div class="controls">
+            <select><option>Select Class: Grade 10 - A</option></select>
+            <select><option>Select Subject: Mathematics</option></select>
+            <select><option>Assessment: Mid-Term Exam</option></select>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Student Name</th>
+                    <th>Roll No.</th>
+                    <th>Continuous Assessment (40)</th>
+                    <th>Exam Score (60)</th>
+                    <th>Total (100)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Adeleke, David</td>
+                    <td>001</td>
+                    <td><input type="number" value="32"></td>
+                    <td><input type="number" value="48"></td>
+                    <td><strong>80</strong></td>
+                </tr>
+                <tr>
+                    <td>Doe, Jane</td>
+                    <td>002</td>
+                    <td><input type="number" value="28"></td>
+                    <td><input type="number" value="52"></td>
+                    <td><strong>80</strong></td>
+                </tr>
+                <tr>
+                    <td>Mensah, Kwame</td>
+                    <td>003</td>
+                    <td><input type="number" value="35"></td>
+                    <td><input type="number" value="55"></td>
+                    <td><strong>90</strong></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <button class="btn-save" onclick="alert('Results saved and published for Livingstone International School!')">Save & Publish Results</button>
+        <div style="clear: both;"></div>
+    </div>
+
+</body>
+</html>

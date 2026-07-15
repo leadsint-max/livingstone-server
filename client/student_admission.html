@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Admission - Livingstone International School</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --accent: #3498db;
+            --light: #f8f9fa;
+        }
+        body { font-family: 'Segoe UI', sans-serif; background-color: #f4f7f6; margin: 0; display: flex; }
+        .sidebar { width: 250px; height: 100vh; background: var(--primary); color: white; position: fixed; padding: 20px; }
+        .main-content { margin-left: 290px; padding: 40px; width: 100%; max-width: 900px; }
+        .form-card { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h2 { color: var(--primary); margin-bottom: 25px; border-bottom: 2px solid var(--accent); padding-bottom: 10px; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .form-group { display: flex; flex-direction: column; }
+        label { font-weight: 600; margin-bottom: 5px; color: #555; }
+        input, select, textarea { padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem; }
+        .btn-submit { background: var(--accent); color: white; border: none; padding: 15px 30px; border-radius: 4px; cursor: pointer; font-size: 1rem; font-weight: bold; margin-top: 20px; transition: 0.3s; }
+        .btn-submit:hover { background: #2980b9; }
+        .section-title { grid-column: span 2; margin-top: 20px; color: var(--accent); font-weight: bold; text-transform: uppercase; font-size: 0.85rem; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <h3>Livingstone Int.</h3>
+        <p>Admin Panel</p>
+        <hr>
+        <p><a href="admin_dashboard.html" style="color: white; text-decoration: none;">🏠 Dashboard</a></p>
+        <p><b>👨‍🎓 Student Admission</b></p>
+        <p>💳 Fee Management</p>
+        <p>📊 Reports</p>
+    </div>
+
+    <div class="main-content">
+        <div class="form-card">
+            <h2>New Student Admission</h2>
+            <form id="admissionForm">
+                <div class="form-grid">
+                    <div class="section-title">Student Photo</div>
+                    <div class="form-group" style="grid-column: span 2; display: flex; align-items: center; gap: 20px; background: #eee; padding: 20px; border-radius: 8px;">
+                        <div id="photo-preview" style="width: 120px; height: 120px; background: #ddd; border: 2px dashed #999; display: flex; align-items: center; justify-content: center; border-radius: 8px;">
+                            <span style="font-size: 0.8rem; color: #666;">No Image</span>
+                        </div>
+                        <div>
+                            <input type="file" id="photo-upload" accept="image/*" style="margin-bottom: 10px;">
+                            <br>
+                            <button type="button" style="background: #34495e; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer;" onclick="alert('Webcam Access Requested...')">📸 Capture via Webcam</button>
+                        </div>
+                    </div>
+
+                    <div class="section-title">Personal Information</div>
+                    <div class="form-group">
+                        <label>First Name</label>
+                        <input type="text" placeholder="e.g. John" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Last Name</label>
+                        <input type="text" placeholder="e.g. Doe" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Date of Birth</label>
+                        <input type="date" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Gender</label>
+                        <select>
+                            <option>Male</option>
+                            <option>Female</option>
+                            <option>Other</option>
+                        </select>
+                    </div>
+
+                    <div class="section-title">Academic Details</div>
+                    <div class="form-group">
+                        <label>Admission Number</label>
+                        <input type="text" placeholder="LIS-2026-0001" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Class / Grade</label>
+                        <select>
+                            <option>Grade 10</option>
+                            <option>Grade 11</option>
+                            <option>Grade 12</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Stream</label>
+                        <select>
+                            <option>A (Science)</option>
+                            <option>B (Arts)</option>
+                            <option>C (Commerce)</option>
+                        </select>
+                    </div>
+
+                    <div class="section-title">Parent/Guardian Details</div>
+                    <div class="form-group">
+                        <label>Parent Name</label>
+                        <input type="text" placeholder="Full Name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Contact Phone</label>
+                        <input type="tel" placeholder="+233..." required>
+                    </div>
+                    <div class="form-group" style="grid-column: span 2;">
+                        <label>Residential Address</label>
+                        <textarea rows="2"></textarea>
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn-submit">Register Student</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="api.js"></script>
+    <script>
+        document.getElementById('admissionForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            // Gather all form data
+            const studentData = {
+                firstName: this.querySelector('input[placeholder="e.g. John"]').value,
+                lastName: this.querySelector('input[placeholder="e.g. Doe"]').value,
+                dob: this.querySelectorAll('input')[2].value,
+                admissionNo: this.querySelector('input[placeholder="LIS-2026-0001"]').value,
+                classId: this.querySelectorAll('select')[1].value,
+                parentName: this.querySelector('input[placeholder="Full Name"]').value,
+                phone: this.querySelector('input[type="tel"]').value
+            };
+
+            try {
+                const response = await api.post('/students/register', studentData);
+                if (response.success) {
+                    alert('Student Record Created in Livingstone Database!');
+                    window.location.href = 'admin_dashboard.html';
+                } else {
+                    alert('Error: ' + response.message);
+                }
+            } catch (err) {
+                alert('Connection failed. Check your internet or server.');
+            }
+        });
+    </script>
+</body>
+</html>

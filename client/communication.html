@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Communication Center - Livingstone International School</title>
+    <style>
+        :root { --primary: #2c3e50; --accent: #1abc9c; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; margin: 0; display: flex; height: 100vh; }
+        .sidebar { width: 300px; background: white; border-right: 1px solid #ddd; display: flex; flex-direction: column; }
+        .main-chat { flex-grow: 1; display: flex; flex-direction: column; background: white; }
+        
+        .header { padding: 20px; background: var(--primary); color: white; }
+        .notice-board { padding: 20px; flex-grow: 1; overflow-y: auto; }
+        .notice-item { background: #fff9db; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 5px solid #f1c40f; }
+        
+        .chat-header { padding: 15px; border-bottom: 1px solid #eee; display: flex; align-items: center; justify-content: space-between; }
+        .messages { flex-grow: 1; padding: 20px; background: #e5ddd5; overflow-y: auto; }
+        .msg { margin-bottom: 15px; max-width: 70%; padding: 10px; border-radius: 8px; font-size: 0.95rem; }
+        .msg.received { background: white; align-self: flex-start; }
+        .msg.sent { background: #dcf8c6; align-self: flex-end; margin-left: auto; }
+        
+        .input-area { padding: 20px; border-top: 1px solid #eee; display: flex; gap: 10px; }
+        input { flex-grow: 1; padding: 10px; border-radius: 20px; border: 1px solid #ddd; }
+        button { background: var(--accent); color: white; border: none; padding: 10px 20px; border-radius: 20px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="header">
+            <h3>📢 Notice Board</h3>
+        </div>
+        <div class="notice-board">
+            <div class="notice-item">
+                <strong>Mid-Term Break</strong>
+                <p style="font-size: 0.85rem; margin-top: 5px;">School will be closed from July 25th to 28th. Enjoy the rest!</p>
+                <small>Posted: 2 hours ago</small>
+            </div>
+            <div class="notice-item" style="border-left-color: #e74c3c; background: #fdedec;">
+                <strong>Fee Deadline</strong>
+                <p style="font-size: 0.85rem; margin-top: 5px;">Final reminder: Term 2 fees must be settled by July 20th.</p>
+                <small>Posted: 1 day ago</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-chat">
+        <div class="chat-header">
+            <div>
+                <strong>Chat: Mr. Smith (Math Teacher)</strong>
+                <p style="font-size: 0.8rem; color: #27ae60;">● Online</p>
+            </div>
+            <button style="background: none; color: #999; font-size: 1.2rem;">⋮</button>
+        </div>
+        <div class="messages" id="chatBox">
+            <div class="msg received">Hello Samuel, I noticed you missed the Math homework submission. Everything okay?</div>
+            <div class="msg sent">Hi Mr. Smith, I was a bit confused by question 5. Can I submit it tomorrow morning?</div>
+            <div class="msg received">Yes, that's fine. Come by the staff room at 8 AM if you need help with question 5.</div>
+        </div>
+        <div class="input-area">
+            <input type="text" placeholder="Type a message...">
+            <button>Send</button>
+        </div>
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Livingstone International School</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #34495e;
+            --accent: #3498db;
+            --success: #27ae60;
+            --warning: #f1c40f;
+            --danger: #e74c3c;
+            --light: #ecf0f1;
+            --dark: #2c3e50;
+            --sidebar-width: 250px;
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            display: flex;
+            background-color: #f4f7f6;
+            color: var(--dark);
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            width: var(--sidebar-width);
+            height: 100vh;
+            background-color: var(--primary);
+            color: white;
+            position: fixed;
+            padding-top: 20px;
+        }
+
+        .sidebar-header {
+            padding: 0 20px 20px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .sidebar-header h2 {
+            font-size: 1.2rem;
+            color: var(--accent);
+        }
+
+        .nav-links {
+            list-style: none;
+            margin-top: 20px;
+        }
+
+        .nav-item {
+            padding: 15px 20px;
+            cursor: pointer;
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            background-color: var(--secondary);
+            border-left: 4px solid var(--accent);
+        }
+
+        .nav-item span {
+            margin-left: 10px;
+        }
+
+        /* Main Content Styles */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            width: calc(100% - var(--sidebar-width));
+            padding: 20px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            background: white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            border-radius: 8px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            background: var(--accent);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+
+        /* Dashboard Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stat-card .label {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+        }
+
+        .stat-card .value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        .stat-card.revenue .value { color: var(--success); }
+
+        /* Tables & Lists */
+        .dashboard-sections {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+        }
+
+        .section-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .btn-view {
+            color: var(--accent);
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            text-align: left;
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+        }
+
+        th {
+            color: #7f8c8d;
+            font-weight: 600;
+        }
+
+        .status {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+        }
+
+        .status.paid { background: #eafaf1; color: var(--success); }
+        .status.pending { background: #fef9e7; color: var(--warning); }
+
+        .activity-list {
+            list-style: none;
+        }
+
+        .activity-item {
+            padding: 15px 0;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .activity-item .time {
+            font-size: 0.75rem;
+            color: #bdc3c7;
+        }
+
+        .activity-item .desc {
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>Livingstone Int.</h2>
+            <p style="font-size: 0.7rem; opacity: 0.7;">Administrator Portal</p>
+        </div>
+        <ul class="nav-links">
+            <li class="nav-item active"><a href="admin_dashboard.html" style="color: inherit; text-decoration: none;">📊 Dashboard</a></li>
+            <li class="nav-item"><a href="student_admission.html" style="color: inherit; text-decoration: none;">👨‍🎓 Students</a></li>
+            <li class="nav-item"><a href="teacher_attendance.html" style="color: inherit; text-decoration: none;">📚 Academic</a></li>
+            <li class="nav-item"><a href="staff_registration.html" style="color: inherit; text-decoration: none;">👨‍🏫 Staff</a></li>
+            <li class="nav-item"><a href="fee_management.html" style="color: inherit; text-decoration: none;">💳 Finance</a></li>
+            <li class="nav-item"><a href="library_management.html" style="color: inherit; text-decoration: none;">📚 Library</a></li>
+            <li class="nav-item"><a href="operations.html" style="color: inherit; text-decoration: none;">🚌 Operations</a></li>
+            <li class="nav-item"><a href="ai_insights.html" style="color: inherit; text-decoration: none;">🧠 AI Insights</a></li>
+            <li class="nav-item"><a href="communication.html" style="color: inherit; text-decoration: none;">💬 Communication</a></li>
+            <li class="nav-item"><span>⚙️ Settings</span></li>
+        </ul>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <header>
+            <div class="search-bar">
+                <input type="text" placeholder="Search students, staff, IDs..." style="padding: 8px 15px; border-radius: 20px; border: 1px solid #ddd; width: 300px;">
+            </div>
+            <div class="user-info">
+                <div style="text-align: right;">
+                    <p style="font-weight: bold; font-size: 0.9rem;">Admin User</p>
+                    <p style="font-size: 0.75rem; color: #7f8c8d;">Super Administrator</p>
+                </div>
+                <div class="user-avatar">AD</div>
+            </div>
+        </header>
+
+        <!-- Stats Grid -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <span class="label">Total Students</span>
+                <span class="value">1,240</span>
+                <span style="color: var(--success); font-size: 0.8rem;">↑ 12 new this week</span>
+            </div>
+            <div class="stat-card">
+                <span class="label">Total Staff</span>
+                <span class="value">85</span>
+                <span style="color: #7f8c8d; font-size: 0.8rem;">5 Active departments</span>
+            </div>
+            <div class="stat-card revenue">
+                <span class="label">Monthly Revenue</span>
+                <span class="value">$45,200</span>
+                <span style="color: var(--success); font-size: 0.8rem;">85% Collected</span>
+            </div>
+            <div class="stat-card">
+                <span class="label">Avg. Attendance</span>
+                <span class="value">94.2%</span>
+                <span style="color: var(--warning); font-size: 0.8rem;">↓ 1.5% from last month</span>
+            </div>
+        </div>
+
+        <div class="dashboard-sections">
+            <!-- Recent Payments Table -->
+            <div class="section-card">
+                <div class="section-header">
+                    <h3>Recent Fee Payments</h3>
+                    <a href="#" class="btn-view">View All Transactions</a>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Student Name</th>
+                            <th>Class</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>John Doe</td>
+                            <td>Grade 10 - A</td>
+                            <td>$500.00</td>
+                            <td><span class="status paid">Paid</span></td>
+                            <td>July 12, 2026</td>
+                        </tr>
+                        <tr>
+                            <td>Jane Smith</td>
+                            <td>Grade 8 - B</td>
+                            <td>$250.00</td>
+                            <td><span class="status pending">Partial</span></td>
+                            <td>July 11, 2026</td>
+                        </tr>
+                        <tr>
+                            <td>Samuel Okon</td>
+                            <td>Grade 12 - Science</td>
+                            <td>$1,200.00</td>
+                            <td><span class="status paid">Paid</span></td>
+                            <td>July 10, 2026</td>
+                        </tr>
+                        <tr>
+                            <td>Mary Johnson</td>
+                            <td>Grade 7 - C</td>
+                            <td>$450.00</td>
+                            <td><span class="status pending">Unpaid</span></td>
+                            <td>July 09, 2026</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Activity Log -->
+            <div class="section-card">
+                <div class="section-header">
+                    <h3>System Activity</h3>
+                </div>
+                <div class="activity-list">
+                    <div class="activity-item">
+                        <span class="desc"><b>New Student</b> admitted: David Adeleke</span>
+                        <span class="time">2 hours ago</span>
+                    </div>
+                    <div class="activity-item">
+                        <span class="desc"><b>Exam Marks</b> uploaded for Grade 10 Math</span>
+                        <span class="time">5 hours ago</span>
+                    </div>
+                    <div class="activity-item">
+                        <span class="desc"><b>Staff Meeting</b> scheduled for July 15th</span>
+                        <span class="time">Yesterday</span>
+                    </div>
+                    <div class="activity-item">
+                        <span class="desc"><b>Payroll</b> generated for Month of June</span>
+                        <span class="time">2 days ago</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

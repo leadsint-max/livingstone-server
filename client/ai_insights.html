@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Performance Insights - Livingstone International School</title>
+    <style>
+        :root { --primary: #2c3e50; --ai: #9b59b6; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; padding: 20px; }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); max-width: 1000px; margin: auto; }
+        h1 { color: var(--ai); display: flex; align-items: center; gap: 10px; }
+        .insight-row { display: grid; grid-template-columns: 1fr 1fr 2fr; gap: 20px; padding: 15px; border-bottom: 1px solid #eee; align-items: center; }
+        .risk-high { color: #e74c3c; font-weight: bold; }
+        .risk-steady { color: #27ae60; font-weight: bold; }
+        .risk-exc { color: #f1c40f; font-weight: bold; }
+        .brain-icon { font-size: 2rem; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1><span class="brain-icon">🧠</span> AI Academic Insights</h1>
+        <p style="color: #666; margin-bottom: 30px;">AI is analyzing student trends based on the last 3 assessment cycles.</p>
+
+        <div class="insight-row" style="background: #f8f9fa; font-weight: bold;">
+            <span>Student Name</span>
+            <span>Current Avg.</span>
+            <span>AI Risk Assessment & Recommendation</span>
+        </div>
+
+        <div class="insight-row">
+            <span>Jane Doe</span>
+            <span>45.0%</span>
+            <span><span class="risk-high">HIGH RISK:</span> Predicted to fail Term 2. Recommend 5 hours/week remedial Math.</span>
+        </div>
+
+        <div class="insight-row">
+            <span>David Adeleke</span>
+            <span>94.7%</span>
+            <span><span class="risk-exc">EXCELLENCE:</span> Consistently top 1%. Predicted 95%+ in Finals. Scholar potential.</span>
+        </div>
+
+        <div class="insight-row">
+            <span>Samuel Okon</span>
+            <span>85.0%</span>
+            <span><span class="risk-steady">STEADY:</span> Showing 5% improvement in Physics. Recommend advanced Physics lab.</span>
+        </div>
+
+        <div class="insight-row">
+            <span>Mary Johnson</span>
+            <span>57.6%</span>
+            <span><span class="risk-high">AT RISK:</span> Downward trend in Science. Weakest subject: Chemistry.</span>
+        </div>
+    </div>
+</body>
+</html>
