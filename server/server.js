@@ -1,8 +1,9 @@
-const express = require('express');
-const { Pool } = require('pg');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const cors = require('cors');
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false },
+    // This helps with the ENETUNREACH error
+    connectionTimeoutMillis: 5000 
+});
 
 const app = express();
 app.use(cors());
