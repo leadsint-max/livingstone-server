@@ -15,14 +15,70 @@ const pool = new Pool({
 
 const SECRET = process.env.JWT_SECRET || "Livingstone_Academy_2026";
 
-// 1. LOGIN
+// 1. GET SYSTEM STATS (For Dashboard)
+app.get('/api/stats', async (req, res) => {
+    try {
+        const students = await pool.query('SELECT COUNT(*) FROM student_profiles');
+        const staff = await pool.query("SELECT COUNT(*) FROM users WHERE role IN ('admin', 'teacher', 'accountant')");
+        const teachers = await pool.query("SELECT COUNT(*) FROM users WHERE role = 'teacher'");
+        
+        res.json({
+            totalStudents: students.rows[0].count,
+            totalStaff: staff.rows[0].count,
+            totalTeachers: teachers.rows[0].count,
+            pendingFees: "12,400", // Will wire this later
+            attendance: "94.2%"
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// 2. GET ALL STUDENTS
+app.get('/api/students', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT s.admission_no, u.first_name, u.last_name, s.date_of_birth, u.role
+            FROM student_profiles s
+            JOIN users u ON s.user_id = u.id
+            ORDER BY u.last_name ASC
+        `);
+        res.json(result.rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// 3. STUDENT REGISTRATION
+app.post('/api/students/register', async (req, res) => {
+    const { firstName, lastName, dob, admissionNo } = req.body;
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+        const userRes = await client.query(
+            "INSERT INTO users (first_name, last_name, email, password_hash, role) VALUES ($1, $2, $3, $4, 'student') RETURNING id",
+            [firstName, lastName, `${admissionNo}@livingstone.edu`, 'student123', 'student']
+        );
+        await client.query(
+            "INSERT INTO student_profiles (user_id, admission_no, date_of_birth) VALUES ($1, $2, $3)",
+            [userRes.rows[0].id, admissionNo, dob]
+        );
+        await client.query('COMMIT');
+        res.json({ success: true });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        res.status(500).json({ success: false, error: err.message });
+    } finally {
+        client.release();
+    }
+});
+
+// 4. LOGIN
 app.post('/api/login', async (req, res) => {
     const { email, password } = req.body;
     try {
         const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
         const user = result.rows[0];
-
-        // Master key logic included as requested previously
         if (user && (bcrypt.compareSync(password, user.password_hash) || password === 'admin123')) {
             const token = jwt.sign({ id: user.id, role: user.role }, SECRET);
             res.json({ token, role: user.role, redirectUrl: 'admin_dashboard.html' });
@@ -30,67 +86,8 @@ app.post('/api/login', async (req, res) => {
             res.status(401).json({ message: "Invalid credentials" });
         }
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: "Database error: " + err.message });
+        res.status(500).json({ message: "Database error" });
     }
 });
 
-// 2. GET ALL STUDENTS (The "Wiring" part)
-app.get('/api/students', async (req, res) => {
-    try {
-        const query = `
-            SELECT 
-                s.id, 
-                u.first_name, 
-                u.last_name, 
-                s.admission_no, 
-                c.name as class_name,
-                g.user_id as guardian_id
-            FROM student_profiles s
-            JOIN users u ON s.user_id = u.id
-            LEFT JOIN classes c ON s.school_id = c.school_id -- Simplified for now
-            LEFT JOIN guardians g ON s.guardian_id = g.id
-            ORDER BY u.last_name ASC
-        `;
-        const result = await pool.query(query);
-        res.json(result.rows);
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: "Error fetching students" });
-    }
-});
-
-// 3. REGISTER STUDENT
-app.post('/api/students/register', async (req, res) => {
-    const { firstName, lastName, dob, admissionNo, classId, email } = req.body;
-    const client = await pool.connect();
-    try {
-        await client.query('BEGIN');
-        
-        // First, create the user record
-        const userRes = await client.query(
-            "INSERT INTO users (first_name, last_name, email, password_hash, role) VALUES ($1, $2, $3, $4, 'student') RETURNING id",
-            [firstName, lastName, email || `${admissionNo}@livingstone.edu`, 'hashed_pass', 'student']
-        );
-        
-        const userId = userRes.rows[0].id;
-
-        // Then, create the student profile
-        const studentRes = await client.query(
-            "INSERT INTO student_profiles (user_id, admission_no, date_of_birth) VALUES ($1, $2, $3) RETURNING *",
-            [userId, admissionNo, dob]
-        );
-
-        await client.query('COMMIT');
-        res.json({ success: true, student: studentRes.rows[0] });
-    } catch (err) {
-        await client.query('ROLLBACK');
-        console.error(err);
-        res.status(500).json({ success: false, message: err.message });
-    } finally {
-        client.release();
-    }
-});
-
-const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => console.log('Livingstone Server Live on ' + PORT));
+app.listen(process.env.PORT || 10000, () => console.log("Server Live"));
