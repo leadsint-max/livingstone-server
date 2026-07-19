@@ -15,28 +15,46 @@ const pool = new Pool({
 
 const SECRET = "Livingstone_Academy_2026";
 
+// 1. STATS (Including real Fee calc placeholder)
+app.get('/api/stats', async (req, res) => {
+    try {
+        const students = await pool.query('SELECT COUNT(*) FROM student_profiles');
+        const teachers = await pool.query("SELECT COUNT(*) FROM users WHERE role = 'teacher'");
+        res.json({ 
+            totalStudents: students.rows[0].count, 
+            totalTeachers: teachers.rows[0].count,
+            pendingFees: "0.00" // Reset to real zero
+        });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// 2. GET ALL STUDENTS (Now includes photo and class)
+app.get('/api/students', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT u.first_name, u.last_name, s.admission_no, s.photo, s.class_name, s.parent_phone
+            FROM student_profiles s
+            JOIN users u ON s.user_id = u.id
+            ORDER BY u.last_name ASC
+        `);
+        res.json(result.rows);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// 3. REGISTER STUDENT (Includes class_name)
 app.post('/api/students/register', async (req, res) => {
-    const { firstName, lastName, dob, admissionNo, photo, gender, parentName, parentPhone, address } = req.body;
+    const { firstName, lastName, dob, admissionNo, photo, gender, parentName, parentPhone, address, className } = req.body;
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
-        
-        // CHECK IF ALREADY EXISTS
-        const check = await client.query("SELECT id FROM users WHERE email = $1", [`${admissionNo}@livingstone.edu`]);
-        if (check.rows.length > 0) {
-            return res.status(400).json({ success: false, error: "This Admission Number is already in use." });
-        }
-
         const userRes = await client.query(
-            "INSERT INTO users (first_name, last_name, email, password_hash, role) VALUES ($1, $2, $3, $4, $5) RETURNING id",
-            [firstName, lastName, `${admissionNo}@livingstone.edu`, 'student123', 'student']
+            "INSERT INTO users (first_name, last_name, email, password_hash, role) VALUES ($1, $2, $3, $4, 'student') RETURNING id",
+            [firstName, lastName, `${admissionNo}@livingstone.edu`, 'student123']
         );
-        
         await client.query(
-            "INSERT INTO student_profiles (user_id, admission_no, date_of_birth, photo, gender, parent_name, parent_phone, address) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
-            [userRes.rows[0].id, admissionNo, dob, photo, gender, parentName, parentPhone, address]
+            "INSERT INTO student_profiles (user_id, admission_no, date_of_birth, photo, gender, parent_name, parent_phone, address, class_name) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)",
+            [userRes.rows[0].id, admissionNo, dob, photo, gender, parentName, parentPhone, address, className]
         );
-        
         await client.query('COMMIT');
         res.json({ success: true });
     } catch (err) {
@@ -45,7 +63,7 @@ app.post('/api/students/register', async (req, res) => {
     } finally { client.release(); }
 });
 
-// OTHER ENDPOINTS (Login, Stats, etc. - keep them the same as before)
+// Keep LOGIN endpoint the same...
 app.post('/api/login', async (req, res) => {
     const { email, password } = req.body;
     try {
@@ -58,12 +76,4 @@ app.post('/api/login', async (req, res) => {
     } catch (err) { res.status(500).json({ message: "Database error" }); }
 });
 
-app.get('/api/stats', async (req, res) => {
-    try {
-        const students = await pool.query('SELECT COUNT(*) FROM student_profiles');
-        const teachers = await pool.query("SELECT COUNT(*) FROM users WHERE role = 'teacher'");
-        res.json({ totalStudents: students.rows[0].count, totalTeachers: teachers.rows[0].count });
-    } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-app.listen(process.env.PORT || 10000, () => console.log("Server Running"));
+app.listen(process.env.PORT || 10000, () => console.log("Server running"));
