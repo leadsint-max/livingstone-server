@@ -6,12 +6,10 @@ const cors = require('cors');
 
 const app = express();
 app.use(cors());
-app.use(express.json({ limit: '10mb' }));
 
-// SAFE GUARD: Check if URL is valid
-if (!process.env.DATABASE_URL) {
-    console.error("FATAL ERROR: DATABASE_URL is not defined in Environment Variables!");
-}
+// Handle large photos and full form data
+app.use(express.json({ limit: '20mb' }));
+app.use(express.urlencoded({ limit: '20mb', extended: true }));
 
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
@@ -23,24 +21,44 @@ const SECRET = "Livingstone_Academy_2026";
 app.post('/api/login', async (req, res) => {
     const { email, password } = req.body;
     try {
-        console.log("LOGIN REQUEST:", email);
         const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
         const user = result.rows[0];
-
         if (user && (bcrypt.compareSync(password, user.password_hash) || password === 'admin123')) {
             const token = jwt.sign({ id: user.id, role: user.role }, SECRET);
             res.json({ token, role: user.role, redirectUrl: 'admin_dashboard.html' });
-        } else {
-            res.status(401).json({ message: "Invalid credentials" });
-        }
-    } catch (err) {
-        // THIS WILL FINALLY SHOW US THE TRUE ERROR MESSAGE
-        console.error("DB ERROR LOG:", err.message);
-        res.status(500).json({ message: "DB ERROR: " + err.message });
-    }
+        } else { res.status(401).json({ message: "Invalid credentials" }); }
+    } catch (err) { res.status(500).json({ message: "Database error" }); }
 });
 
-app.get('/', (req, res) => res.send('Livingstone Server is Online'));
+// FULL STUDENT REGISTRATION
+app.post('/api/students/register', async (req, res) => {
+    const { firstName, lastName, dob, admissionNo, photo, gender, parentName, parentPhone, address } = req.body;
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+        const userRes = await client.query(
+            "INSERT INTO users (first_name, last_name, email, password_hash, role) VALUES ($1, $2, $3, $4, 'student') RETURNING id",
+            [firstName, lastName, `${admissionNo}@livingstone.edu`, 'student123', 'student']
+        );
+        await client.query(
+            "INSERT INTO student_profiles (user_id, admission_no, date_of_birth, photo, gender, parent_name, parent_phone, address) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
+            [userRes.rows[0].id, admissionNo, dob, photo, gender, parentName, parentPhone, address]
+        );
+        await client.query('COMMIT');
+        res.json({ success: true });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error("REGISTRATION ERROR:", err.message);
+        res.status(500).json({ success: false, error: err.message });
+    } finally { client.release(); }
+});
 
-const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => console.log('Server started on port ' + PORT));
+app.get('/api/stats', async (req, res) => {
+    try {
+        const students = await pool.query('SELECT COUNT(*) FROM student_profiles');
+        const teachers = await pool.query("SELECT COUNT(*) FROM users WHERE role = 'teacher'");
+        res.json({ totalStudents: students.rows[0].count, totalTeachers: teachers.rows[0].count });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.listen(process.env.PORT || 10000, () => console.log("Livingstone Academy Server Running"));
