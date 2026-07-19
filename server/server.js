@@ -6,7 +6,10 @@ const cors = require('cors');
 
 const app = express();
 app.use(cors());
-app.use(express.json());
+
+// INCREASE LIMIT: This allows the server to handle the photo data
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
@@ -15,6 +18,7 @@ const pool = new Pool({
 
 const SECRET = process.env.JWT_SECRET || "Livingstone_Academy_2026";
 
+// 1. STATS
 app.get('/api/stats', async (req, res) => {
     try {
         const students = await pool.query('SELECT COUNT(*) FROM student_profiles');
@@ -24,18 +28,37 @@ app.get('/api/stats', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.get('/api/students', async (req, res) => {
+// 2. STUDENT REGISTRATION (Improved)
+app.post('/api/students/register', async (req, res) => {
+    const { firstName, lastName, dob, admissionNo, photo } = req.body;
+    const client = await pool.connect();
     try {
-        const result = await pool.query(`
-            SELECT u.first_name, u.last_name, s.admission_no 
-            FROM student_profiles s 
-            JOIN users u ON s.user_id = u.id 
-            LIMIT 100
-        `);
-        res.json(result.rows);
-    } catch (err) { res.status(500).json({ error: err.message }); }
+        await client.query('BEGIN');
+        
+        // Create User
+        const userRes = await client.query(
+            "INSERT INTO users (first_name, last_name, email, password_hash, role) VALUES ($1, $2, $3, $4, 'student') RETURNING id",
+            [firstName, lastName, `${admissionNo}@livingstone.edu`, 'student123', 'student']
+        );
+        
+        // Create Profile (Note: We are not storing the photo in the DB yet to save space, but the server won't crash anymore)
+        await client.query(
+            "INSERT INTO student_profiles (user_id, admission_no, date_of_birth) VALUES ($1, $2, $3)",
+            [userRes.rows[0].id, admissionNo, dob]
+        );
+        
+        await client.query('COMMIT');
+        res.json({ success: true });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error("REGISTRATION ERROR:", err.message);
+        res.status(500).json({ success: false, error: err.message });
+    } finally {
+        client.release();
+    }
 });
 
+// 3. LOGIN
 app.post('/api/login', async (req, res) => {
     const { email, password } = req.body;
     try {
