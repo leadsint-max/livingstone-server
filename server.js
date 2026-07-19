@@ -6,10 +6,7 @@ const cors = require('cors');
 
 const app = express();
 app.use(cors());
-
-// Handle large photos and full form data
 app.use(express.json({ limit: '20mb' }));
-app.use(express.urlencoded({ limit: '20mb', extended: true }));
 
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
@@ -18,6 +15,7 @@ const pool = new Pool({
 
 const SECRET = "Livingstone_Academy_2026";
 
+// 1. LOGIN
 app.post('/api/login', async (req, res) => {
     const { email, password } = req.body;
     try {
@@ -30,25 +28,32 @@ app.post('/api/login', async (req, res) => {
     } catch (err) { res.status(500).json({ message: "Database error" }); }
 });
 
-// FULL STUDENT REGISTRATION
+// 2. FULL STUDENT REGISTRATION (Fixed Parameters)
 app.post('/api/students/register', async (req, res) => {
     const { firstName, lastName, dob, admissionNo, photo, gender, parentName, parentPhone, address } = req.body;
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
+        
+        // Create User entry first (Corrected to 5 parameters)
         const userRes = await client.query(
-            "INSERT INTO users (first_name, last_name, email, password_hash, role) VALUES ($1, $2, $3, $4, 'student') RETURNING id",
+            "INSERT INTO users (first_name, last_name, email, password_hash, role) VALUES ($1, $2, $3, $4, $5) RETURNING id",
             [firstName, lastName, `${admissionNo}@livingstone.edu`, 'student123', 'student']
         );
+        
+        const userId = userRes.rows[0].id;
+
+        // Create Profile entry (8 parameters)
         await client.query(
             "INSERT INTO student_profiles (user_id, admission_no, date_of_birth, photo, gender, parent_name, parent_phone, address) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
-            [userRes.rows[0].id, admissionNo, dob, photo, gender, parentName, parentPhone, address]
+            [userId, admissionNo, dob, photo, gender, parentName, parentPhone, address]
         );
+        
         await client.query('COMMIT');
         res.json({ success: true });
     } catch (err) {
         await client.query('ROLLBACK');
-        console.error("REGISTRATION ERROR:", err.message);
+        console.error("DB ERROR:", err.message);
         res.status(500).json({ success: false, error: err.message });
     } finally { client.release(); }
 });
@@ -61,4 +66,4 @@ app.get('/api/stats', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.listen(process.env.PORT || 10000, () => console.log("Livingstone Academy Server Running"));
+app.listen(process.env.PORT || 10000, () => console.log("Server Running"));
