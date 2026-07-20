@@ -77,6 +77,38 @@ app.get('/api/subjects', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// 9. GET ALL CLASSES
+app.get('/api/classes', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM classes ORDER BY level ASC');
+        res.json(result.rows);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// 10. CREATE STREAM
+app.post('/api/streams/add', async (req, res) => {
+    const { classId, streamName, capacity, teacherId } = req.body;
+    try {
+        await pool.query(
+            "INSERT INTO streams (class_id, name, capacity, class_teacher_id) VALUES ($1, $2, $3, $4)",
+            [classId, streamName, capacity, teacherId]
+        );
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+// 11. GET ACTIVE STREAMS (For the list)
+app.get('/api/streams', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT s.name as stream_name, c.name as class_name, s.capacity, u.first_name as teacher_name
+            FROM streams s
+            JOIN classes c ON s.class_id = c.id
+            LEFT JOIN users u ON s.class_teacher_id = u.id
+        `);
+        res.json(result.rows);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
 // 3. MARK ENTRY
 app.post('/api/marks/save', async (req, res) => {
     const { marksList } = req.body;
