@@ -97,6 +97,48 @@ app.post('/api/marks/save', async (req, res) => {
     } finally { client.release(); }
 });
 
+// GET CLASS RANKINGS
+app.get('/api/academic/rankings/:className', async (req, res) => {
+    try {
+        const query = `
+            SELECT 
+                u.first_name, u.last_name, s.admission_no,
+                SUM(m.score) as total_score,
+                RANK() OVER (ORDER BY SUM(m.score) DESC) as position
+            FROM student_profiles s
+            JOIN users u ON s.user_id = u.id
+            LEFT JOIN student_marks m ON s.admission_no = m.student_id
+            WHERE s.class_name = $1
+            GROUP BY u.first_name, u.last_name, s.admission_no
+            ORDER BY total_score DESC;
+        `;
+        const result = await pool.query(query, [req.params.className]);
+        res.json(result.rows);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// GET FULL REPORT FOR ONE STUDENT
+app.get('/api/academic/report/:admissionNo', async (req, res) => {
+    try {
+        const studentInfo = await pool.query(`
+            SELECT u.first_name, u.last_name, s.admission_no, s.class_name, s.photo
+            FROM student_profiles s
+            JOIN users u ON s.user_id = u.id
+            WHERE s.admission_no = $1`, [req.params.admissionNo]);
+            
+        const marks = await pool.query(`
+            SELECT m.*, sub.name as subject_name
+            FROM student_marks m
+            JOIN subjects sub ON m.subject_id = sub.id
+            WHERE m.student_id = $1`, [req.params.admissionNo]);
+
+        res.json({
+            student: studentInfo.rows[0],
+            marks: marks.rows
+        });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 // 4. STUDENT & USER Logic (Existing)
 app.get('/api/students', async (req, res) => {
     try {
