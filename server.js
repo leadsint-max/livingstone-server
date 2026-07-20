@@ -25,13 +25,20 @@ app.get('/api/stats', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// 2. SUBJECT MANAGEMENT
+// 2. SUBJECT MANAGEMENT (Updated to handle Level)
 app.post('/api/subjects/add', async (req, res) => {
-    const { name, code, department } = req.body;
+    // Note: 'level' must match the word used in your subject_management.html script
+    const { name, code, department, level } = req.body;
     try {
-        await pool.query("INSERT INTO subjects (name, code, department) VALUES ($1, $2, $3)", [name, code, department]);
+        await pool.query(
+            "INSERT INTO subjects (name, code, department, school_level) VALUES ($1, $2, $3, $4)", 
+            [name, code, department, level]
+        );
         res.json({ success: true });
-    } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+    } catch (err) { 
+        console.error("DB ADD SUBJECT ERROR:", err.message);
+        res.status(500).json({ success: false, error: err.message }); 
+    }
 });
 // DELETE SUBJECT
 app.post('/api/subjects/delete', async (req, res) => {
