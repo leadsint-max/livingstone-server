@@ -43,6 +43,14 @@ app.post('/api/subjects/delete', async (req, res) => {
         res.status(500).json({ success: false, error: "Cannot delete subject. It might be linked to student marks." });
     }
 });
+// UPDATED ADD SUBJECT
+app.post('/api/subjects/add', async (req, res) => {
+    const { name, code, department, level } = req.body;
+    try {
+        await pool.query("INSERT INTO subjects (name, code, department, school_level) VALUES ($1, $2, $3, $4)", [name, code, department, level]);
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
 app.get('/api/subjects', async (req, res) => {
     try {
         const result = await pool.query("SELECT * FROM subjects ORDER BY name ASC");
