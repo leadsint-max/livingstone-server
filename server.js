@@ -15,20 +15,64 @@ const pool = new Pool({
 
 const SECRET = "Livingstone_Academy_2026";
 
+// 1. DASHBOARD STATS
 app.get('/api/stats', async (req, res) => {
     try {
         const students = await pool.query('SELECT COUNT(*) FROM student_profiles');
-        const staff = await pool.query("SELECT COUNT(*) FROM users WHERE role != 'student'");
+        const staff = await pool.query("SELECT COUNT(*) FROM users WHERE role IN ('admin', 'teacher', 'accountant')");
         const teachers = await pool.query("SELECT COUNT(*) FROM users WHERE role = 'teacher'");
         res.json({ totalStudents: students.rows[0].count, totalStaff: staff.rows[0].count, totalTeachers: teachers.rows[0].count, pendingFees: "0.00" });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.get('/api/students', async (req, res) => {
+// 2. STAFF REGISTRATION
+app.post('/api/staff/register', async (req, res) => {
+    const { fullName, email, role, employeeId, designation, department, photo } = req.body;
+    const [firstName, ...lastNameParts] = fullName.split(' ');
+    const lastName = lastNameParts.join(' ') || 'Staff';
+    const client = await pool.connect();
     try {
-        const result = await pool.query(`SELECT u.first_name, u.last_name, s.admission_no, s.photo, s.class_name, s.parent_phone FROM student_profiles s JOIN users u ON s.user_id = u.id ORDER BY u.last_name ASC`);
+        await client.query('BEGIN');
+        const userRes = await client.query(
+            "INSERT INTO users (first_name, last_name, email, password_hash, role) VALUES ($1, $2, $3, $4, $5) RETURNING id",
+            [firstName, lastName, email, 'staff123', role]
+        );
+        await client.query(
+            "INSERT INTO staff_profiles (user_id, employee_id, designation, department, photo) VALUES ($1, $2, $3, $4, $5)",
+            [userRes.rows[0].id, employeeId, designation, department, photo]
+        );
+        await client.query('COMMIT');
+        res.json({ success: true });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        res.status(500).json({ success: false, error: err.message });
+    } finally { client.release(); }
+});
+
+// 3. GET ALL STAFF
+app.get('/api/staff', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT u.first_name, u.last_name, u.role, u.email, sp.employee_id, sp.designation, sp.department, sp.photo 
+            FROM staff_profiles sp 
+            JOIN users u ON sp.user_id = u.id 
+            ORDER BY u.last_name ASC
+        `);
         res.json(result.rows);
     } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// LOGIN, STUDENT REG, etc. (Keeping logic from before)
+app.post('/api/login', async (req, res) => {
+    const { email, password } = req.body;
+    try {
+        const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+        const user = result.rows[0];
+        if (user && (bcrypt.compareSync(password, user.password_hash) || password === 'admin123')) {
+            const token = jwt.sign({ id: user.id, role: user.role }, SECRET);
+            res.json({ token, role: user.role, redirectUrl: 'admin_dashboard.html' });
+        } else { res.status(401).json({ message: "Invalid credentials" }); }
+    } catch (err) { res.status(500).json({ message: "Database error" }); }
 });
 
 app.post('/api/students/register', async (req, res) => {
@@ -44,19 +88,12 @@ app.post('/api/students/register', async (req, res) => {
     finally { client.release(); }
 });
 
-app.post('/api/login', async (req, res) => {
-    const { email, password } = req.body;
+app.get('/api/students', async (req, res) => {
     try {
-        const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
-        const user = result.rows[0];
-        if (user && (bcrypt.compareSync(password, user.password_hash) || password === 'admin123')) {
-            const token = jwt.sign({ id: user.id, role: user.role }, SECRET);
-            res.json({ token, role: user.role, redirectUrl: 'admin_dashboard.html' });
-        } else { res.status(401).json({ message: "Invalid credentials" }); }
-    } catch (err) { res.status(500).json({ message: "Database error" }); }
+        const result = await pool.query(`SELECT u.first_name, u.last_name, s.admission_no, s.photo, s.class_name FROM student_profiles s JOIN users u ON s.user_id = u.id`);
+        res.json(result.rows);
+    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.get('/', (req, res) => res.send('Livingstone Academy Server Live'));
-
-const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => console.log('Live on ' + PORT));
+app.get('/', (req, res) => res.send('Server Active'));
+app.listen(process.env.PORT || 10000);
