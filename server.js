@@ -51,10 +51,11 @@ app.post('/api/students/register', async (req, res) => {
             "INSERT INTO users (first_name, last_name, email, password_hash, role) VALUES ($1, $2, $3, $4, 'student') RETURNING id",
             [firstName, lastName, `${admissionNo}@livingstone.edu`, 'student123']
         );
-        await client.query(
-            "INSERT INTO student_profiles (user_id, admission_no, date_of_birth, photo, gender, parent_name, parent_phone, address, class_name) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)",
-            [userRes.rows[0].id, admissionNo, dob, photo, gender, parentName, parentPhone, address, className]
-        );
+        // Ensure this part looks like this:
+await client.query(
+    "INSERT INTO student_profiles (user_id, admission_no, date_of_birth, photo, gender, parent_name, parent_phone, class_name) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
+    [userRes.rows[0].id, admissionNo, dob, photo, gender, parentName, parentPhone, className]
+);
         await client.query('COMMIT');
         res.json({ success: true });
     } catch (err) {
