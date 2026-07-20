@@ -24,7 +24,19 @@ app.get('/api/stats', async (req, res) => {
         res.json({ totalStudents: students.rows[0].count, totalStaff: staff.rows[0].count, totalTeachers: teachers.rows[0].count, pendingFees: "0.00" });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
-
+// GET STUDENTS BY CLASS
+app.get('/api/students/class/:className', async (req, res) => {
+    try {
+        const result = await pool.query(
+            `SELECT u.first_name, u.last_name, s.admission_no 
+             FROM student_profiles s 
+             JOIN users u ON s.user_id = u.id 
+             WHERE s.class_name = $1`, 
+            [req.params.className]
+        );
+        res.json(result.rows);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
 // 2. SUBJECT MANAGEMENT (Updated to handle Level)
 app.post('/api/subjects/add', async (req, res) => {
     // Note: 'level' must match the word used in your subject_management.html script
