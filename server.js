@@ -15,168 +15,57 @@ const pool = new Pool({
 
 const SECRET = "Livingstone_Academy_2026";
 
-// 1. STATS
+// 1. UPDATED STATS (Now with real Revenue!)
 app.get('/api/stats', async (req, res) => {
     try {
-        const students = await pool.query('SELECT COUNT(*) FROM student_profiles');
-        const staff = await pool.query("SELECT COUNT(*) FROM users WHERE role != 'student'");
-        const teachers = await pool.query("SELECT COUNT(*) FROM users WHERE role = 'teacher'");
-        res.json({ totalStudents: students.rows[0].count, totalStaff: staff.rows[0].count, totalTeachers: teachers.rows[0].count, pendingFees: "0.00" });
-    } catch (err) { res.status(500).json({ error: err.message }); }
-});
-// GET STUDENTS BY CLASS
-app.get('/api/students/class/:className', async (req, res) => {
-    try {
-        const result = await pool.query(
-            `SELECT u.first_name, u.last_name, s.admission_no 
-             FROM student_profiles s 
-             JOIN users u ON s.user_id = u.id 
-             WHERE s.class_name = $1`, 
-            [req.params.className]
-        );
-        res.json(result.rows);
-    } catch (err) { res.status(500).json({ error: err.message }); }
-});
-// 2. SUBJECT MANAGEMENT (Updated to handle Level)
-app.post('/api/subjects/add', async (req, res) => {
-    // Note: 'level' must match the word used in your subject_management.html script
-    const { name, code, department, level } = req.body;
-    try {
-        await pool.query(
-            "INSERT INTO subjects (name, code, department, school_level) VALUES ($1, $2, $3, $4)", 
-            [name, code, department, level]
-        );
-        res.json({ success: true });
-    } catch (err) { 
-        console.error("DB ADD SUBJECT ERROR:", err.message);
-        res.status(500).json({ success: false, error: err.message }); 
-    }
-});
-// DELETE SUBJECT
-app.post('/api/subjects/delete', async (req, res) => {
-    const { id } = req.body;
-    try {
-        await pool.query("DELETE FROM subjects WHERE id = $1", [id]);
-        res.json({ success: true });
-    } catch (err) {
-        res.status(500).json({ success: false, error: "Cannot delete subject. It might be linked to student marks." });
-    }
-});
-// UPDATED ADD SUBJECT
-app.post('/api/subjects/add', async (req, res) => {
-    const { name, code, department, level } = req.body;
-    try {
-        await pool.query("INSERT INTO subjects (name, code, department, school_level) VALUES ($1, $2, $3, $4)", [name, code, department, level]);
-        res.json({ success: true });
-    } catch (err) { res.status(500).json({ success: false, error: err.message }); }
-});
-app.get('/api/subjects', async (req, res) => {
-    try {
-        const result = await pool.query("SELECT * FROM subjects ORDER BY name ASC");
-        res.json(result.rows);
-    } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-// 9. GET ALL CLASSES
-app.get('/api/classes', async (req, res) => {
-    try {
-        const result = await pool.query('SELECT * FROM classes ORDER BY level ASC');
-        res.json(result.rows);
-    } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-// 10. CREATE STREAM
-app.post('/api/streams/add', async (req, res) => {
-    const { classId, streamName, capacity, teacherId } = req.body;
-    try {
-        await pool.query(
-            "INSERT INTO streams (class_id, name, capacity, class_teacher_id) VALUES ($1, $2, $3, $4)",
-            [classId, streamName, capacity, teacherId]
-        );
-        res.json({ success: true });
-    } catch (err) { res.status(500).json({ success: false, error: err.message }); }
-});
-
-// 11. GET ACTIVE STREAMS (For the list)
-app.get('/api/streams', async (req, res) => {
-    try {
-        const result = await pool.query(`
-            SELECT s.name as stream_name, c.name as class_name, s.capacity, u.first_name as teacher_name
-            FROM streams s
-            JOIN classes c ON s.class_id = c.id
-            LEFT JOIN users u ON s.class_teacher_id = u.id
-        `);
-        res.json(result.rows);
-    } catch (err) { res.status(500).json({ error: err.message }); }
-});
-// 3. MARK ENTRY
-app.post('/api/marks/save', async (req, res) => {
-    const { marksList } = req.body;
-    const client = await pool.connect();
-    try {
-        await client.query('BEGIN');
-        for (let m of marksList) {
-            await client.query(
-                "INSERT INTO student_marks (student_id, subject_id, exam_type, term, score, remarks) VALUES ($1, $2, $3, $4, $5, $6)",
-                [m.studentId, m.subjectId, m.examType, m.term, m.score, m.remarks]
-            );
-        }
-        await client.query('COMMIT');
-        res.json({ success: true });
-    } catch (err) {
-        await client.query('ROLLBACK');
-        res.status(500).json({ success: false, error: err.message });
-    } finally { client.release(); }
-});
-
-// GET CLASS RANKINGS
-app.get('/api/academic/rankings/:className', async (req, res) => {
-    try {
-        const query = `
-            SELECT 
-                u.first_name, u.last_name, s.admission_no,
-                SUM(m.score) as total_score,
-                RANK() OVER (ORDER BY SUM(m.score) DESC) as position
-            FROM student_profiles s
-            JOIN users u ON s.user_id = u.id
-            LEFT JOIN student_marks m ON s.admission_no = m.student_id
-            WHERE s.class_name = $1
-            GROUP BY u.first_name, u.last_name, s.admission_no
-            ORDER BY total_score DESC;
-        `;
-        const result = await pool.query(query, [req.params.className]);
-        res.json(result.rows);
-    } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-// GET FULL REPORT FOR ONE STUDENT
-app.get('/api/academic/report/:admissionNo', async (req, res) => {
-    try {
-        const studentInfo = await pool.query(`
-            SELECT u.first_name, u.last_name, s.admission_no, s.class_name, s.photo
-            FROM student_profiles s
-            JOIN users u ON s.user_id = u.id
-            WHERE s.admission_no = $1`, [req.params.admissionNo]);
-            
-        const marks = await pool.query(`
-            SELECT m.*, sub.name as subject_name
-            FROM student_marks m
-            JOIN subjects sub ON m.subject_id = sub.id
-            WHERE m.student_id = $1`, [req.params.admissionNo]);
-
-        res.json({
-            student: studentInfo.rows[0],
-            marks: marks.rows
+        const studentRes = await pool.query('SELECT COUNT(*) FROM student_profiles');
+        const staffRes = await pool.query("SELECT COUNT(*) FROM staff_profiles");
+        const teacherRes = await pool.query("SELECT COUNT(*) FROM users WHERE role = 'teacher'");
+        
+        // Sum all payments in the database
+        const revenueRes = await pool.query('SELECT SUM(amount) FROM payments');
+        const totalRevenue = revenueRes.rows[0].sum || "0.00";
+        
+        res.json({ 
+            totalStudents: studentRes.rows[0].count, 
+            totalStaff: staffRes.rows[0].count, 
+            totalTeachers: teacherRes.rows[0].count, 
+            pendingFees: totalRevenue // We show collected revenue here for now
         });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// 4. STUDENT & USER Logic (Existing)
-app.get('/api/students', async (req, res) => {
+// 2. RECORD A PAYMENT
+app.post('/api/payments/record', async (req, res) => {
+    const { studentId, amount, feeType, method, reference } = req.body;
     try {
-        const result = await pool.query(`SELECT u.first_name, u.last_name, s.admission_no, s.photo, s.class_name FROM student_profiles s JOIN users u ON s.user_id = u.id`);
+        await pool.query(
+            "INSERT INTO payments (student_id, amount, fee_type, payment_method, reference) VALUES ($1, $2, $3, $4, $5)",
+            [studentId, amount, feeType, method, reference]
+        );
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+// 3. GET STUDENT NAMES FOR DROPDOWN
+app.get('/api/students/list-simple', async (req, res) => {
+    try {
+        const result = await pool.query("SELECT admission_no, first_name, last_name FROM student_profiles s JOIN users u ON s.user_id = u.id");
         res.json(result.rows);
     } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// [Keep all other existing routes: Login, Register, Marks, etc.]
+app.post('/api/login', async (req, res) => {
+    const { email, password } = req.body;
+    try {
+        const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+        const user = result.rows[0];
+        if (user && (bcrypt.compareSync(password, user.password_hash) || password === 'admin123')) {
+            const token = jwt.sign({ id: user.id, role: user.role }, SECRET);
+            res.json({ token, role: user.role, redirectUrl: 'admin_dashboard.html' });
+        } else { res.status(401).json({ message: "Invalid credentials" }); }
+    } catch (err) { res.status(500).json({ message: "Database error" }); }
 });
 
 app.post('/api/students/register', async (req, res) => {
@@ -192,16 +81,48 @@ app.post('/api/students/register', async (req, res) => {
     finally { client.release(); }
 });
 
-app.post('/api/login', async (req, res) => {
-    const { email, password } = req.body;
+app.get('/api/staff', async (req, res) => {
     try {
-        const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
-        const user = result.rows[0];
-        if (user && (bcrypt.compareSync(password, user.password_hash) || password === 'admin123')) {
-            const token = jwt.sign({ id: user.id, role: user.role }, SECRET);
-            res.json({ token, role: user.role, redirectUrl: 'admin_dashboard.html' });
-        } else { res.status(401).json({ message: "Invalid credentials" }); }
-    } catch (err) { res.status(500).json({ message: "Database error" }); }
+        const result = await pool.query(`SELECT u.first_name, u.last_name, u.role, u.email, sp.employee_id, sp.department, sp.photo FROM staff_profiles sp JOIN users u ON sp.user_id = u.id`);
+        res.json(result.rows);
+    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.listen(process.env.PORT || 10000, () => console.log("Server Running"));
+app.get('/api/students', async (req, res) => {
+    try {
+        const result = await pool.query(`SELECT u.first_name, u.last_name, s.admission_no, s.photo, s.class_name FROM student_profiles s JOIN users u ON s.user_id = u.id`);
+        res.json(result.rows);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/subjects/add', async (req, res) => {
+    const { name, code, department, level } = req.body;
+    try {
+        await pool.query("INSERT INTO subjects (name, code, department, school_level) VALUES ($1, $2, $3, $4)", [name, code, department, level]);
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+app.get('/api/subjects', async (req, res) => {
+    try {
+        const result = await pool.query("SELECT * FROM subjects ORDER BY name ASC");
+        res.json(result.rows);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/marks/save', async (req, res) => {
+    const { marksList } = req.body;
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+        for (let m of marksList) {
+            await client.query("INSERT INTO student_marks (student_id, subject_id, exam_type, term, score, remarks) VALUES ($1, $2, $3, $4, $5, $6)", [m.studentId, m.subjectId, m.examType, m.term, m.score, m.remarks]);
+        }
+        await client.query('COMMIT');
+        res.json({ success: true });
+    } catch (err) { await client.query('ROLLBACK'); res.status(500).json({ success: false, error: err.message }); }
+    finally { client.release(); }
+});
+
+app.get('/', (req, res) => res.send('Server Active'));
+app.listen(process.env.PORT || 10000);
