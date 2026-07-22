@@ -26,22 +26,43 @@ app.get('/api/stats', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// 2. MASTER STUDENT PROFILE (The New Logic)
+// MASTER STUDENT PROFILE ENDPOINT
 app.get('/api/students/profile/:admissionNo', async (req, res) => {
     try {
         const adm = req.params.admissionNo;
-        // Get Profile
-        const info = await pool.query(`SELECT u.first_name, u.last_name, u.email, s.* FROM student_profiles s JOIN users u ON s.user_id = u.id WHERE s.admission_no = $1`, [adm]);
-        if (info.rows.length === 0) return res.status(404).json({ error: "Not found" });
 
-        // Get Marks
-        const marks = await pool.query(`SELECT m.*, sub.name as subject_name FROM student_marks m JOIN subjects sub ON m.subject_id = sub.id WHERE m.student_id = $1`, [adm]);
+        // 1. Get Core Profile
+        const infoRes = await pool.query(`
+            SELECT u.first_name, u.last_name, u.email, s.* 
+            FROM student_profiles s 
+            JOIN users u ON s.user_id = u.id 
+            WHERE s.admission_no = $1`, [adm]);
 
-        // Get Payments
-        const payments = await pool.query(`SELECT * FROM payments WHERE student_id = $1 ORDER BY created_at DESC`, [adm]);
+        if (infoRes.rows.length === 0) return res.status(404).json({ error: "Student not found" });
 
-        res.json({ profile: info.rows[0], marks: marks.rows, payments: payments.rows });
-    } catch (err) { res.status(500).json({ error: err.message }); }
+        // 2. Get Real Marks (Joined with Subject Names)
+        const marksRes = await pool.query(`
+            SELECT m.*, sub.name as subject_name 
+            FROM student_marks m 
+            JOIN subjects sub ON m.subject_id = sub.id 
+            WHERE m.student_id = $1 
+            ORDER BY m.created_at DESC`, [adm]);
+
+        // 3. Get Real Payments
+        const paymentsRes = await pool.query(`
+            SELECT * FROM payments 
+            WHERE student_id = $1 
+            ORDER BY created_at DESC`, [adm]);
+
+        res.json({
+            profile: infoRes.rows[0],
+            marks: marksRes.rows,
+            payments: paymentsRes.rows
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Database retrieval failed" });
+    }
 });
 
 // 3. REGISTRATION & LISTS
