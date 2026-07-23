@@ -104,6 +104,38 @@ app.get('/api/academic/report-card/:admissionNo', async (req, res) => {
         });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
+
+// UPDATED REPORT CARD LOGIC WITH 30/70 SPLIT & FINANCE
+app.get('/api/academic/report-card/:admissionNo', async (req, res) => {
+    try {
+        const adm = req.params.admissionNo;
+
+        // 1. Get Student & Financial Arrears
+        const studentInfo = await pool.query(`
+            SELECT u.first_name, u.last_name, s.admission_no, s.class_name, s.photo,
+            (SELECT COUNT(*) FROM student_profiles sp WHERE sp.class_name = s.class_name) as class_total,
+            COALESCE((SELECT SUM(amount) FROM fee_structures fs WHERE fs.class_name = s.class_name), 0) - 
+            COALESCE((SELECT SUM(amount) FROM payments p WHERE p.student_id = s.admission_no), 0) as arrears
+            FROM student_profiles s
+            JOIN users u ON s.user_id = u.id
+            WHERE s.admission_no = $1`, [adm]);
+
+        // 2. Get Marks with 30/70 grouping
+        const marks = await pool.query(`
+            SELECT sub.name as subject_name,
+            MAX(CASE WHEN m.exam_type = 'Mid-Term' THEN m.score ELSE 0 END) as mid_term,
+            MAX(CASE WHEN m.exam_type = 'Final Exam' THEN m.score ELSE 0 END) as final_exam
+            FROM student_marks m
+            JOIN subjects sub ON m.subject_id = sub.id
+            WHERE m.student_id = $1
+            GROUP BY sub.name`, [adm]);
+
+        res.json({
+            student: studentInfo.rows[0],
+            marks: marks.rows
+        });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
 // 4. ACADEMICS & RANKINGS (The part you were missing)
 app.get('/api/subjects', async (req, res) => {
     const result = await pool.query("SELECT * FROM subjects ORDER BY school_level, name ASC");
