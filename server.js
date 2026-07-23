@@ -65,46 +65,59 @@ app.post('/api/staff/register', async (req, res) => {
     finally { client.release(); }
 });
 
-// GET COMPLETE STUDENT REPORT CARD DATA
+// IMPROVED REPORT CARD DATA RETRIEVAL
 app.get('/api/academic/report-card/:admissionNo', async (req, res) => {
     try {
         const adm = req.params.admissionNo;
 
-        // 1. Get Student & Class Info
+        // 1. Get Student Info & Arrears
         const studentInfo = await pool.query(`
             SELECT u.first_name, u.last_name, s.admission_no, s.class_name, s.photo,
-            (SELECT COUNT(*) FROM student_profiles sp WHERE sp.class_name = s.class_name) as class_total
+            (SELECT COUNT(*) FROM student_profiles sp WHERE sp.class_name = s.class_name) as class_total,
+            COALESCE((SELECT SUM(amount) FROM fee_structures fs WHERE fs.class_name = s.class_name), 0) - 
+            COALESCE((SELECT SUM(amount) FROM payments p WHERE p.student_id = s.admission_no), 0) as arrears
             FROM student_profiles s
             JOIN users u ON s.user_id = u.id
             WHERE s.admission_no = $1`, [adm]);
 
         if (studentInfo.rows.length === 0) return res.status(404).json({ error: "Student not found" });
 
-        // 2. Get Marks with Subject Names
-        const marks = await pool.query(`
-            SELECT m.score, m.remarks, m.exam_type, sub.name as subject_name
+        // 2. Get Marks (Simplified Grouping)
+        // This pulls any mark found for the student and groups them by subject
+        const marksQuery = `
+            SELECT 
+                sub.name as subject_name,
+                MAX(CASE WHEN m.exam_type = 'Mid-Term' THEN m.score ELSE 0 END) as mid_term,
+                MAX(CASE WHEN m.exam_type = 'Final Exam' THEN m.score ELSE 0 END) as final_exam,
+                MAX(m.remarks) as remarks
             FROM student_marks m
             JOIN subjects sub ON m.subject_id = sub.id
-            WHERE m.student_id = $1`, [adm]);
+            WHERE m.student_id = $1
+            GROUP BY sub.name
+        `;
+        const marks = await pool.query(marksQuery, [adm]);
 
         // 3. Get Class Position
-        const ranking = await pool.query(`
+        const rankingQuery = `
             SELECT position FROM (
                 SELECT s.admission_no, RANK() OVER (ORDER BY SUM(m.score) DESC) as position
                 FROM student_profiles s
                 JOIN student_marks m ON s.admission_no = m.student_id
                 WHERE s.class_name = $1
                 GROUP BY s.admission_no
-            ) r WHERE admission_no = $2`, [studentInfo.rows[0].class_name, adm]);
+            ) r WHERE admission_no = $2`;
+        const ranking = await pool.query(rankingQuery, [studentInfo.rows[0].class_name, adm]);
 
         res.json({
             student: studentInfo.rows[0],
             marks: marks.rows,
             position: ranking.rows[0]?.position || "N/A"
         });
-    } catch (err) { res.status(500).json({ error: err.message }); }
+    } catch (err) { 
+        console.error("REPORT CARD ERROR:", err.message);
+        res.status(500).json({ error: err.message }); 
+    }
 });
-
 // UPDATED REPORT CARD LOGIC WITH 30/70 SPLIT & FINANCE
 app.get('/api/academic/report-card/:admissionNo', async (req, res) => {
     try {
