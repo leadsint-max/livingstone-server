@@ -26,9 +26,14 @@ app.get('/api/stats', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// 2. CLASS & STREAM MANAGEMENT
+// 2. CLASS & STREAM LOGIC
 app.get('/api/classes', async (req, res) => {
     const r = await pool.query("SELECT * FROM classes ORDER BY level_order ASC");
+    res.json(r.rows);
+});
+
+app.get('/api/teachers', async (req, res) => {
+    const r = await pool.query("SELECT id, first_name, last_name FROM users WHERE role = 'teacher' ORDER BY last_name ASC");
     res.json(r.rows);
 });
 
@@ -40,7 +45,7 @@ app.post('/api/streams/add', async (req, res) => {
             [classId, name, capacity, teacherId]
         );
         res.json({ success: true });
-    } catch (e) { res.status(500).json({ error: e.message }); }
+    } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
 app.get('/api/streams', async (req, res) => {
@@ -49,47 +54,11 @@ app.get('/api/streams', async (req, res) => {
         FROM streams s 
         JOIN classes c ON s.class_id = c.id 
         LEFT JOIN users u ON s.class_teacher_id = u.id
-        ORDER BY c.level_order ASC`);
+        ORDER BY c.level_order ASC, s.name ASC`);
     res.json(r.rows);
 });
 
-// 3. DATA LISTS
-app.get('/api/staff', async (req, res) => {
-    const r = await pool.query(`SELECT u.id, u.first_name, u.last_name, u.role, sp.department FROM staff_profiles sp JOIN users u ON sp.user_id = u.id WHERE u.role = 'teacher'`);
-    res.json(r.rows);
-});
-
-app.get('/api/students', async (req, res) => {
-    const r = await pool.query(`SELECT u.first_name, u.last_name, s.* FROM student_profiles s JOIN users u ON s.user_id = u.id ORDER BY u.last_name ASC`);
-    res.json(r.rows);
-});
-
-app.get('/api/students/class/:className', async (req, res) => {
-    const r = await pool.query(`SELECT u.first_name, u.last_name, s.admission_no FROM student_profiles s JOIN users u ON s.user_id = u.id WHERE s.class_name = $1`, [req.params.className]);
-    res.json(r.rows);
-});
-
-// 4. ACADEMICS & MARKS
-app.get('/api/subjects', async (req, res) => {
-    const r = await pool.query("SELECT * FROM subjects ORDER BY school_level, name ASC");
-    res.json(r.rows);
-});
-
-app.post('/api/subjects/add', async (req, res) => {
-    const { name, code, level } = req.body;
-    await pool.query("INSERT INTO subjects (name, code, school_level) VALUES ($1, $2, $3)", [name, code, level]);
-    res.json({ success: true });
-});
-
-app.post('/api/marks/save', async (req, res) => {
-    const { marksList } = req.body;
-    for (let m of marksList) {
-        await pool.query("INSERT INTO student_marks (student_id, subject_id, exam_type, term, score, remarks) VALUES ($1, $2, $3, $4, $5, $6)", [m.studentId, m.subjectId, m.examType, m.term, m.score, m.remarks]);
-    }
-    res.json({ success: true });
-});
-
-// 5. LOGIN
+// [KEEP LOGIN, REGISTER STUDENT/STAFF, MARKS, PAYMENTS as per previous turns]
 app.post('/api/login', async (req, res) => {
     const { email, password } = req.body;
     const r = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
@@ -98,6 +67,23 @@ app.post('/api/login', async (req, res) => {
         const token = jwt.sign({ id: user.id, role: user.role }, SECRET);
         res.json({ token, role: user.role, redirectUrl: 'admin_dashboard.html' });
     } else { res.status(401).json({ message: "Invalid credentials" }); }
+});
+
+app.get('/api/students/class/:className', async (req, res) => {
+    const r = await pool.query(`SELECT u.first_name, u.last_name, s.admission_no FROM student_profiles s JOIN users u ON s.user_id = u.id WHERE s.class_name = $1`, [req.params.className]);
+    res.json(r.rows);
+});
+
+app.post('/api/marks/save', async (req, res) => {
+    const { marksList } = req.body;
+    for (let m of marksList) { await pool.query("INSERT INTO student_marks (student_id, subject_id, exam_type, term, score, remarks) VALUES ($1, $2, $3, $4, $5, $6)", [m.studentId, m.subjectId, m.examType, m.term, m.score, m.remarks]); }
+    res.json({ success: true });
+});
+
+app.post('/api/payments/record', async (req, res) => {
+    const { studentId, amount, feeType, method, reference } = req.body;
+    await pool.query("INSERT INTO payments (student_id, amount, fee_type, payment_method, reference) VALUES ($1, $2, $3, $4, $5)", [studentId, amount, feeType, method, reference]);
+    res.json({ success: true });
 });
 
 app.get('/', (req, res) => res.send('Livingstone Academy Server Live'));
